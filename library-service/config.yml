@@ -1,14 +1,14 @@
 server:
   applicationConnectors:
     - type: http
-      port: 8080
+      port: 9080
 #    - type: https
 #      port: 8443
 #      keyStorePath: example.keystore
 #      keyStorePassword: example
   adminConnectors:
     - type: http
-      port: 8081
+      port: 9081
 #    - type: https
 #      port: 8444
 #      keyStorePath: example.keystore

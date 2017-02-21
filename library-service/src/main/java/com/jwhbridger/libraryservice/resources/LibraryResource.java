@@ -15,6 +15,6 @@ public class LibraryResource {
     @GET
     @Timed
     public Response getAllBooks() {
-        return Response.ok().build();
+        return Response.ok("blah").build();
     }
 }
