@@ -1,6 +1,7 @@
 package com.jwhbridger.library.glue;
 
 import com.google.inject.Inject;
+import cucumber.api.java.After;
 import cucumber.api.java.Before;
 import cucumber.runtime.java.guice.ScenarioScoped;
 
@@ -17,6 +18,11 @@ public class Hooks {
     @Before
     public void setUp() {
         appController.startAndWait();
+    }
+
+    @After
+    public void tearDown() {
+        appController.stop();
     }
 //
 //    @BeforeClass

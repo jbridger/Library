@@ -28,14 +28,13 @@ public class AppController {
         this.client = client;
         app = new DropwizardTestSupport<>(LibraryServiceApplication.class,
                 "../library-service/config.yml",
-                ConfigOverride.config("server.applicationConnectors[0].port", "0"));
+                ConfigOverride.config("server.applicationConnectors[0].port", "0"),
+                ConfigOverride.config("server.adminConnectors[0].port", "0")
+        );
     }
 
     void startAndWait() {
         app.before();
-
-//        TODO: Maybe inject this
-//        Client client = new JerseyClientBuilder(app.getEnvironment()).build("test client");
 
         await().atMost(5, TimeUnit.SECONDS).until(() -> {
             Response response = client.target(
@@ -46,5 +45,9 @@ public class AppController {
             // TODO: Change to 200
             return response.getStatus() == HttpStatus.NOT_FOUND_404;
         });
+    }
+
+    public void stop() {
+        app.after();
     }
 }

@@ -46,3 +46,7 @@ dependencies {
 
     testCompile 'junit:junit:4.11'
 }
+
+tasks.withType(Test) {
+    maxParallelForks = 4
+}
