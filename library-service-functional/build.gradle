@@ -50,3 +50,21 @@ dependencies {
 tasks.withType(Test) {
     maxParallelForks = 4
 }
+
+task group1Tests(type: Test, dependsOn: testClasses) {
+    filter {
+        includeTestsMatching "*Group1Tests"
+    }
+}
+
+task group2Tests(type: Test, dependsOn: testClasses) {
+    filter {
+        includeTestsMatching "*Group2Tests"
+    }
+}
+
+task allTests(type: Test, dependsOn: testClasses) {
+    filter {
+        includeTestsMatching "*"
+    }
+}
