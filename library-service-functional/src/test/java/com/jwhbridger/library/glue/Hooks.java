@@ -24,15 +24,4 @@ public class Hooks {
     public void tearDown() {
         appController.stop();
     }
-//
-//    @BeforeClass
-//    public void beforeClass() {
-//        System.out.println("Starting");
-//        libraryServiceTestSupport.before();
-//    }
-//
-//    @AfterClass
-//    public void afterClass() {
-//        libraryServiceTestSupport.after();
-//    }
 }

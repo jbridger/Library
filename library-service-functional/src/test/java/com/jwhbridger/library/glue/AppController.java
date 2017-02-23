@@ -12,6 +12,7 @@ import javax.inject.Singleton;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Response;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.awaitility.Awaitility.await;
 
@@ -22,6 +23,9 @@ public class AppController {
     private DropwizardTestSupport<LibraryServiceConfiguration> app;
 
     private Client client;
+
+    @Getter
+    private AtomicBoolean isAppRunning = new AtomicBoolean();
 
     @Inject
     public AppController(Client client) {
@@ -34,20 +38,25 @@ public class AppController {
     }
 
     void startAndWait() {
-        app.before();
+        if (isAppRunning.compareAndSet(false, true)) {
+            app.before();
 
-        await().atMost(5, TimeUnit.SECONDS).until(() -> {
-            Response response = client.target(
-                    String.format("http://localhost:%d/private/ready", app.getLocalPort()))
-                    .request()
-                    .get();
+            await().atMost(5, TimeUnit.SECONDS).until(() -> {
+                Response response = client.target(
+                        String.format("http://localhost:%d/private/ready", app.getLocalPort()))
+                        .request()
+                        .get();
 
-            // TODO: Change to 200
-            return response.getStatus() == HttpStatus.NOT_FOUND_404;
-        });
+                // TODO: Change to 200
+                return response.getStatus() == HttpStatus.NOT_FOUND_404;
+            });
+        }
+
     }
 
-    public void stop() {
-        app.after();
+    void stop() {
+        if (isAppRunning.compareAndSet(true, false)) {
+            app.after();
+        }
     }
 }
