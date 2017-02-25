@@ -22,6 +22,11 @@ public class Hooks {
 
     @After
     public void tearDown() {
-        appController.stop();
+//        appController.stop();
+//        Runtime.getRuntime().addShutdownHook(new Thread() {
+//
+//        });
     }
+
+
 }

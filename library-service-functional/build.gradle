@@ -1,3 +1,22 @@
+import groovyx.gpars.GParsPool
+import net.masterthought.cucumber.ReportBuilder
+import net.masterthought.cucumber.Configuration
+import net.masterthought.cucumber.Reportable
+
+buildscript {
+    repositories {
+//        maven {
+//            url "http://repo.bodar.com"
+//        }
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath "org.codehaus.gpars:gpars:1.2.1",
+                "net.masterthought:cucumber-reporting:3.3.0"
+    }
+}
+
 group 'org.jwhbridger'
 version '1.0-SNAPSHOT'
 
@@ -45,10 +64,18 @@ dependencies {
     testCompile 'org.projectlombok:lombok:1.16.12'
 
     testCompile 'junit:junit:4.11'
+
+    testCompile 'com.google.guava:guava:21.0'
+    testCompile 'ch.qos.logback:logback-classic:1.2.1'
+
 }
 
 tasks.withType(Test) {
-    maxParallelForks = 4
+    maxParallelForks = 2
+
+    testLogging {
+        showStandardStreams = true
+    }
 }
 
 task group1Tests(type: Test, dependsOn: testClasses) {
@@ -63,8 +90,91 @@ task group2Tests(type: Test, dependsOn: testClasses) {
     }
 }
 
+task group1Parallel(type: Test, dependsOn: testClasses) {
+    filter {
+        includeTestsMatching "*ParallelRunnerGroup1*"
+    }
+}
+
 task allTests(type: Test, dependsOn: testClasses) {
     filter {
         includeTestsMatching "*"
     }
+}
+
+
+
+task runGroup1InSequence {
+    dependsOn assemble
+    doLast {
+        javaexec {
+            main = "cucumber.api.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = ['--plugin', 'pretty', '--glue', 'com.jwhbridger.library.glue', 'src/test/resources', '--tags', '@group1']
+        }
+    }
+}
+
+task runGroup1InParallel {
+    doLast {
+        def testProperties = "-DsomePropertie=somePropertie"
+        runCucumberTests(testProperties, "@group1")
+    }
+}
+
+def runCucumberTests(testProperties, tags) {
+    def features = fileTree(dir: "${project.projectDir}/src/test/resources/features/library/").include '**/*.feature'
+
+    GParsPool.withPool(10) {
+        features.eachParallel { File file ->
+
+            javaexec {
+                main = "cucumber.api.cli.Main"
+                classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+
+
+                args = ['--plugin', 'pretty', '--glue', 'com.jwhbridger.library.glue',
+                        "${project.projectDir}/src/test/resources/features/library/${file.name}",
+                        "--plugin", "json:${reporting.baseDir}/cucumber/${file.name}.json",
+                        "--tags", "${tags}"
+                ]
+            }
+            println("${file.name}: Scenario output: ${reporting.baseDir}/cucumber/${file.name}.log ")
+        }
+    }
+    generateReport()
+}
+
+task runInSequence() {
+    doLast {
+        def arglist = ["-p", "pretty", "-p", "json:${reporting.baseDir}/cucumber/cucumber.json", "--glue", "com.camiloribeiro",
+                       "${project.projectDir}/src/main/java/com/camiloribeiro/features"]
+
+        return javaexec {
+            main = "cucumber.api.cli.Main"
+            classpath = sourceSets.main.runtimeClasspath
+            args = arglist
+        }
+        generateReport()
+    }
+}
+
+def generateReport() {
+    def jsonReports = fileTree(dir: "${reporting.baseDir}/cucumber/").include '**/*.json'.toString()
+    File reportOutputDirectory = new File("${reporting.baseDir}/cucumber");
+
+    List<String> jsonReportFiles = new ArrayList<String>();
+    jsonReports.each { File file ->
+        jsonReportFiles.add("${reporting.baseDir}/cucumber/${file.name}".toString());
+    }
+
+    Configuration configuration = new Configuration(reportOutputDirectory, "cucumber-gradle-parallel");
+    // optional configuration
+    configuration.setParallelTesting(true);
+    configuration.setRunWithJenkins(false);
+    configuration.setBuildNumber("1988");
+
+    ReportBuilder reportBuilder = new ReportBuilder(jsonReportFiles, configuration);
+    Reportable result = reportBuilder.generateReports();
+    println("\nReport available on: ${reporting.baseDir}/cucumber/cucumber-html-reports/overview-features.html")
 }
