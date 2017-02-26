@@ -5,6 +5,7 @@ import com.jwhbridger.libraryservice.LibraryServiceConfiguration;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jetty.http.HttpStatus;
 
 import javax.inject.Inject;
@@ -17,6 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.awaitility.Awaitility.await;
 
 @Singleton
+@Slf4j
 public class AppController {
 
     @Getter
@@ -30,15 +32,19 @@ public class AppController {
     @Inject
     public AppController(Client client) {
         this.client = client;
-        app = new DropwizardTestSupport<>(LibraryServiceApplication.class,
-                "../library-service/config.yml",
-                ConfigOverride.config("server.applicationConnectors[0].port", "0"),
-                ConfigOverride.config("server.adminConnectors[0].port", "0")
-        );
+
     }
 
     void startAndWait() {
         if (isAppRunning.compareAndSet(false, true)) {
+            log.info("Starting - Thread ID {}, AppControlller {}", Thread.currentThread().getId(), this);
+
+            app = new DropwizardTestSupport<>(LibraryServiceApplication.class,
+                    "../library-service/config.yml",
+                    ConfigOverride.config("server.applicationConnectors[0].port", "0"),
+                    ConfigOverride.config("server.adminConnectors[0].port", "0")
+            );
+
             app.before();
 
             await().atMost(5, TimeUnit.SECONDS).until(() -> {
@@ -56,7 +62,9 @@ public class AppController {
 
     void stop() {
         if (isAppRunning.compareAndSet(true, false)) {
-            app.after();
+            if (app != null) {
+                app.after();
+            }
         }
     }
 }

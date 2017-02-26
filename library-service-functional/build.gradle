@@ -102,8 +102,6 @@ task allTests(type: Test, dependsOn: testClasses) {
     }
 }
 
-
-
 task runGroup1InSequence {
     dependsOn assemble
     doLast {
@@ -125,21 +123,30 @@ task runGroup1InParallel {
 def runCucumberTests(testProperties, tags) {
     def features = fileTree(dir: "${project.projectDir}/src/test/resources/features/library/").include '**/*.feature'
 
+    def groupedFeatures = features.collate(2)
+
     GParsPool.withPool(10) {
-        features.eachParallel { File file ->
+        groupedFeatures.eachParallel { featureGroup ->
+
+            def pathsToFeatures = featureGroup.each {
+                it.absolutePath
+            }
+            def resultFileName = UUID.randomUUID().toString()
+
+            def cucumberArgs = ['--plugin', 'pretty', '--glue', 'com.jwhbridger.library.glue',
+                                "--plugin", "json:${reporting.baseDir}/cucumber/${resultFileName}.json",
+                                "--tags", "${tags}"
+            ]
+
+            cucumberArgs.addAll pathsToFeatures
 
             javaexec {
                 main = "cucumber.api.cli.Main"
                 classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
 
-
-                args = ['--plugin', 'pretty', '--glue', 'com.jwhbridger.library.glue',
-                        "${project.projectDir}/src/test/resources/features/library/${file.name}",
-                        "--plugin", "json:${reporting.baseDir}/cucumber/${file.name}.json",
-                        "--tags", "${tags}"
-                ]
+                args = cucumberArgs
             }
-            println("${file.name}: Scenario output: ${reporting.baseDir}/cucumber/${file.name}.log ")
+            println("$resultFileName: Scenario output: ${reporting.baseDir}/cucumber/${resultFileName}.log ")
         }
     }
     generateReport()

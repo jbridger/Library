@@ -13,20 +13,4 @@ import javax.inject.Inject;
         , tags = {"@group1"}
 )
 public class Group1ATests {
-//
-//    private Hooks hooks;
-//
-//    @Inject
-//    public Group1ATests(Hooks hooks) {
-//
-//        this.hooks = hooks;
-//    }
-//
-//
-//
-//
-//    @AfterClass
-//    public static void afterClass() {
-//        System.out.println("======Completed");
-//    }
 }

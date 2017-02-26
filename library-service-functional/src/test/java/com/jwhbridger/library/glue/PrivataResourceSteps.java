@@ -30,7 +30,7 @@ public class PrivataResourceSteps implements En {
         Then("^I get a successful response$", () -> {
             try {
                 log.info("Waiting..." + Thread.currentThread().getId());
-                Thread.sleep(10000);
+                Thread.sleep(1000);
                 log.info("Response: " + libraryServiceClient.getResponse().getStatus());
             } catch (InterruptedException e) {
                 e.printStackTrace();
